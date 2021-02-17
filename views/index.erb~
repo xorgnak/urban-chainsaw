@@ -1,0 +1,16 @@
+<img id="bg" src="/bg.jpg">
+<img id="icon" src="/logo.png">
+<div id="title">
+  <h1>silverwood</h1>
+  <h1>works</h1>
+</div>
+<h1 id="links">
+  <a class="material-icons" href='/home'>house</a>
+  <a class="material-icons" href='https://github.com/silverwood-works/townhall/issues/new?labels=questions'>share</a>
+  <a class="material-icons" href='https://github.com/silverwood-works'>give</a>
+</h1>
+<script>
+  $("#icon").animate({ top: "10%" }, 2000, function() { $("#icon").animate({ top: "15%" }, 500); });
+  $("#links").animate({ bottom: "35%" }, 2500);
+</script>
+

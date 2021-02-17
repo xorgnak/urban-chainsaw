@@ -1,0 +1,41 @@
+<div class="ui" id="auth">
+  <div style="border: thin solid black; border-radius: 10px; margin: 5% 0 0 0;">
+    <h1>login</h1>
+    <h2 style='margin: 0;'><input type='text' id='U' placeholder='username'></h2>
+    <h2 style='margin: 0;'><input type='password' id='Z' placeholder='password'></h2>
+    <h2><button type='button' id='signin'>SIGN IN</button></h2>
+  </div>
+</div>
+<div class="ui" id="feed">
+  <button onclick="connect('1234567890');">call</button>
+  <!-- list of users -->
+  <!-- user.on click -->
+  <!-- call user -->
+  <!-- end -->
+</div>
+<div class="ui" id="call">
+  <video class="remote-video" autoplay></video>
+  <div class="messages"></div>
+</div>
+<script>
+  var z;
+  $(function() {                        
+  var u = localStorage.getItem("U");		 
+  if (u == null || z == undefined) {
+  $("#feed").hide();
+  $("#auth").show();
+  }
+  $(document).on('submit', "form", function(ev) { ev.preventDefault(); });
+  $(document).on('click', '#signin', function(ev) { 
+  ev.preventDefault();
+  localStorage.setItem("U", sha1($("#U").val()));
+  u = localStorage.getItem("U");
+  // post auth
+  // sha1($("#Z").val());
+  $("#U").val("");
+  $("#Z").val("");
+  $("#auth").hide();                                     
+  $("#feed").show();
+  });
+  });
+</script>

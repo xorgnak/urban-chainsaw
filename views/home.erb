@@ -1,0 +1,181 @@
+<h1 id='nav'>
+  <button class="material-icons show" id="show-conf" value="conf">settings</button>
+  <button class="material-icons show" id="show-feed" value="feed">comment_bank</button>
+  <button class="material-icons show" id="show-qr" value="qr">share</button>
+</h1>
+<div class="ui" id="conf">
+  <label for="mode">I am</label><select id="mode" name="mode">
+    <option value="buy">buying</option>
+    <option value="sell">selling</option>
+  </select>
+  <input type="text" id="name" placeholder="your nickname..." />
+  <input type="text" id="pitch" placeholder="item..." />
+  <textarea id="desc" placeholder="description" style="description..."></textarea
+									 <button class="material-icons" value="feed">save</button>
+</div>
+<div class="ui" id="qr">
+  <input id="id" type="text" size="50">
+  <button type="button" class="qrcode-reader material-icons" id="scanner"
+	  data-qrr-target="#id"
+	  data-qrr-audio-feedback="false"
+	  data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
+  <button class="material-icons" id='add'>add</button>
+</div>
+<div class="ui" id="auth">
+  <div id="nav" style="border: thin solid black; border-radius: 10px; margin: 5% 0 0 0;">
+    <h1>login</h1>
+    <h2 style='margin: 0;'><input type='text' id='U' placeholder='username'></h2>
+    <h2 style='margin: 0;'><input type='password' id='Z' placeholder='password'></h2>
+    <h2><button type='button' id='signin'>SIGN IN</button></h2>
+  </div>
+</div>
+<div class="ui" id="feed">
+    <div id="messages">Welcome!</div>
+    <div id="friends">
+      <div class="friend" style="position: relative; text-align: center; border-radius: 10px; padding: 1%;">
+	<img src="/logo.png" style="width: 100%;">
+	<span style="position: absolute; top: 0; left: 0; background-color: white; background-color: white; border: thin solid orangered; border-radius: 10px;">my sample item</span> 
+	<button class="material-icons call" value='1234567890' style="position: absolute; top: 0; right: 0; font-size: initial;">call</button>
+	<p style="position: absolute; bottom: 0; left: 50%; transform: translate(-50%, -50%); background-color: white; border: thin solid orangered; border-radius: 10px;">my sample desc</p>
+      </div>
+    </div>
+</div>
+<div class="ui" id="call">
+  <button class="material-icons show" value="feed">comment_blank</button>
+  <video class="remote-video" autoplay></video>
+  
+</div>
+<script>
+    var z;
+var d = { contacts: [] };
+$(function() {
+    $.qrCodeReader.jsQRpath = "https://cdn.staticaly.com/gh/mauntrelio/qrcode-reader/master/dist/js/jsQR/jsQR.min.js";
+    $.qrCodeReader.beepPath = "https://cdn.staticaly.com/gh/mauntrelio/qrcode-reader/master/dist/audio/beep.mp3";
+    
+    // bind all elements of a given class
+    $("#scanner").qrCodeReader();
+    var u = localStorage.getItem("U");
+    display("auth");
+    if (u != null && z != undefined) {
+	load();
+	update();
+	display("feed");
+    }
+    // client-side js, loaded by index.html
+    // run by the browser each time the page is loaded
+    
+    let Peer = window.Peer;
+    
+    let messagesEl = document.querySelector('.messages');
+    let videoEl = document.querySelector('.remote-video');
+    
+    let logMessage = (message) => {
+	let newMessage = document.createElement('div');
+	newMessage.innerText = message;
+	messagesEl.appendChild(newMessage);
+    };
+    
+    let renderVideo = (stream) => {
+	videoEl.srcObject = stream;
+    };
+    
+    // Register with the peer server
+    let peer = new Peer(u);
+    peer.on('open', (id) => {
+	d.id = id;
+    });
+    peer.on('error', (error) => {
+	console.error(error);
+    });
+    
+    // Handle incoming data connection
+    peer.on('connection', (conn) => {
+	logMessage('incoming peer connection!');
+	conn.on('data', (data) => {
+	    logMessage(`received: ${data}`);
+	});
+	conn.on('open', () => {
+	    conn.send('hello!');
+	});
+    });
+    
+    // Handle incoming voice/video connection
+    peer.on('call', (call) => {
+	navigator.mediaDevices.getUserMedia({video: true, audio: true})
+            .then((stream) => {
+		display("call");
+		call.answer(stream); // Answer the call with an A/V stream.
+		call.on('stream', renderVideo);
+	    })
+            .catch((err) => {
+		display("feed");
+		console.error('Failed to get local stream', err);
+	    });
+    });
+    
+    function save() { localStorage.setItem("C", JSON.stringify(d)); }
+    function load() { d = JSON.parse(localStorage.getItem("C")); }
+    function update() {
+	$.post('/', d, function (data) {
+	    d = data;
+	    save(); load();
+	    $("#friends").html(d.friends);
+	    $("#messages").html(d.messages);
+	    // update display......
+	    console.log("update", d);
+	    display("feed");
+	});
+    }
+    function display(el) {
+	$(".ui").hide();
+	$("#nav").hide();
+	$(".show").css('background-color', 'initial');
+	$("#show-" + el).css("background-color", "orangered");
+	$("#" + el).show();
+	if ( el != 'auth' ) { $("#nav").show(); }
+    }
+    
+    function connect(to) {
+	logMessage(`connecting: ${to}`);
+	let conn = peer.connect(to);
+	conn.on('data', (data) => {
+	    logMessage(`received: ${data}`);
+	});
+	conn.on('open', () => {
+	    logMessage(`connected: ${to}`);
+	});
+	
+	navigator.mediaDevices.getUserMedia({video: true, audio: true})
+	    .then((stream) => {
+		display("call");
+		let call = peer.call(youId, stream);
+		call.on('stream', renderVideo);
+	    })
+	    .catch((err) => {
+		logMessage('Failed to get local stream', err);
+	    });
+    };
+    
+    $(document).on('submit', "form", function(ev) { ev.preventDefault(); });
+    $(document).on('click', '#signin', function(ev) { 
+	ev.preventDefault();
+	localStorage.setItem("U", sha1($("#U").val()));
+	u = localStorage.getItem("U");
+	d.user = u;
+	d.pass = sha1($("#Z").val());
+	$("#U").val("");
+	$("#Z").val("");                                     
+	update();
+    });
+    $(document).on('click', '.call', function() {
+	connect($(this).val());
+    });
+    $(document).on('click', '.show', function() {
+	display($(this).val());
+    });
+    $(document).on('click', '#add', function() {
+	d.contacts << ($("#id").val());
+    });
+});
+</script>
+    

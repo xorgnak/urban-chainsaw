@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require 'sinatra/base'
+require 'redis-objects'
+require 'paho-mqtt'
+require 'json'
+require 'pry'
+
+require "nomadic"
+def app
+Nomadic::APP
+end
+Pry.start
