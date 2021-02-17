@@ -46,6 +46,7 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 	$('.ui').hide();
 	var f = [];
 	var m = [];
+	load();
 	$.qrCodeReader.jsQRpath = "https://cdn.staticaly.com/gh/mauntrelio/qrcode-reader/master/dist/js/jsQR/jsQR.min.js";
 	$.qrCodeReader.beepPath = "https://cdn.staticaly.com/gh/mauntrelio/qrcode-reader/master/dist/audio/beep.mp3";
 	
@@ -60,7 +61,7 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 	let videoEl = document.querySelector('.remote-video');
 	
 	let logMessage = (message) => {
-	    m << message;
+	    m.push(message);
 	    update();
 	};
 	
@@ -69,9 +70,9 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 	};
 	
 	// Register with the peer server
-	let peer = new Peer("<%= Nomadic.whois(params[:token]) %>");
+	let peer = new Peer("<%= @here.attr['id'] %>");
 	peer.on('open', (id) => {
-	    update();
+	    f.push(id);
 	    setInterval(update(), 5000);
 	});
 	peer.on('error', (error) => {
@@ -103,17 +104,17 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 		});
 	});
 	
-	function save() { localStorage.setItem("f", JSON.stringify(f)); localStorage.setItem("C", JSON.stringify(d)); }
-	function load() { f = JSON.parse(localStorage.getItem("f")); d = JSON.parse(localStorage.getItem("C")); }
+	function save() { localStorage.setItem("f", JSON.stringify(f)); }
+	function load() { f = JSON.parse(localStorage.getItem("f")); }
 	function update() {
-	    if ( $('#id').val() != '' ) {
+	    if ( $('#id').val() == '' ) {
 		var d = {};
 		d.name = $("#name").val();
 		d.pitch = $("#pitch").val();
 		d.image = $("#image").val();
 		d.desc = $("#desc").val();
-		d.contacts = f;
-		d.messages = m;
+		d.contacts = JSON.stringify(f);
+		d.messages = JSON.stringify(m);
 		d.token = '<%= params[:token] %>';
 		console.log("UPDATE", d);
 		$.post('/', d, function (data) {
@@ -123,11 +124,11 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 		    $("#pitch").val(data.pitch);
 		    $("#image").val(data.image);
 		    $("#desc").val(data.desc);
-		    m = data.messages;
-		    f = data .contacts;
+		    f = JSON.parse(data.contacts);
+		    save();
 		    console.log("update", data);
-		    display("feed");
 		});
+		m = [];
 	    }
 	}
 	function display(el) {
@@ -170,7 +171,7 @@ data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
 	});
 	$(document).on('click', '#add', function() {
 	    f << ($("#id").val());
-	    update();
+	    $("#show-feed").click();
 	});
     });
 </script>

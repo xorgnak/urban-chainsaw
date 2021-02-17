@@ -38,6 +38,7 @@
     get '/home' do
       if params[:token]
         if Nomadic.whois(params[:token])
+          @here = Nomadic.user(params[:token])
           erb :home
         else
           redirect '/home'
@@ -48,16 +49,20 @@
     end
     post '/auth' do
       if params[:user] && params[:pass]
+        t = []; 16.times { t << rand(16).to_s(16) }
+        i = []; 16.times { i << rand(16).to_s(16) }
         # new user
         if !Redis::HashKey.new("AUTH").has_key? params[:user]
           Redis::HashKey.new("AUTH")[params[:user]] = params[:pass]
         end
 
         if Redis::HashKey.new("AUTH")[params[:user]] == params[:pass]
-          t = []; 16.times { t << rand(16).to_s(16) }
-          @token = t.join("")
           r = Redis.new
           r.setex("token:#{t.join('')}", ((60 * 60) * 10), params[:user])
+          @u = Nomadic.user(t.join(''), params)
+          if !@u.attr.has_key? 'id'
+            @u.attr['id'] = i.join('')
+          end
           redirect "/home?token=#{t.join('')}"
         else
           redirect '/home'
@@ -71,14 +76,14 @@
       if params[:token]
         p[:token] = params[:token]
         p[:contacts] = params[:contacts]
-        @u = Nomadic::User.new(p[:token], params)
+        @u = Nomadic.user(p[:token], params)
+        p[:contacts] = JSON.generate(@u.group.members.to_a)
         p[:friends] = @u.friends
         p[:messages] = @u.messages
         p[:name] = @u.attr['name']
         p[:pitch] = @u.attr['pitch']
         p[:image] = @u.attr['image']
         p[:desc] = @u.attr['desc']
-        p.each {|k,v| session[k] = v }
       end
       return JSON.generate(p)
     end
