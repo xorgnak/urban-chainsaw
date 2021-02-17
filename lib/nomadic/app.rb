@@ -59,11 +59,21 @@
         end
       # valid token
       elsif params[:token] && Redis.new.get("token:#{params[:token]}") == params[:id]
+        r = Redis.new
+        r.setex("token:#{params[:token]}", ((60 * 60) * 10), params[:id])
         p[:id] = params[:id]
         p[:token] = params[:token]
       else
         p[:auth] = false
       end
+
+      p[:contacts] = params[:contacts]
+      @u = User.new(p[:id])
+      p[:friends] = @u.friends
+      p[:messages] = @u.messages
+      p[:name] = @u.attr['name']
+      p[:pitch] = @u.attr['pitch']
+      p[:desc] = @u.attr['desc']
       return JSON.generate(p)
     end
     not_found do

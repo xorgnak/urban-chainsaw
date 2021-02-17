@@ -10,15 +10,14 @@
   </select>
   <input type="text" id="name" placeholder="your nickname..." />
   <input type="text" id="pitch" placeholder="item..." />
-  <textarea id="desc" placeholder="description" style="description..."></textarea
-									 <button class="material-icons" value="feed">save</button>
+  <textarea id="desc" placeholder="description" style="width: 100%;"></textarea>
 </div>
 <div class="ui" id="qr">
-  <input id="id" type="text" size="50">
   <button type="button" class="qrcode-reader material-icons" id="scanner"
 	  data-qrr-target="#id"
 	  data-qrr-audio-feedback="false"
-	  data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
+data-qrr-qrcode-regexp="^https?:\/\/" style="">qr_code_scanner</button>
+    <input id="id" type="text" size="50" placeholder="contact id...">
   <button class="material-icons" id='add'>add</button>
 </div>
 <div class="ui" id="auth">
@@ -116,6 +115,10 @@ $(function() {
     function save() { localStorage.setItem("C", JSON.stringify(d)); }
     function load() { d = JSON.parse(localStorage.getItem("C")); }
     function update() {
+	d.name = $("#name").val();
+	d.pitch = $("#pitch").val();
+	d.image = $("#image").val();
+	d.desc = $("#desc").val();
 	$.post('/', d, function (data) {
 	    d = data;
 	    save(); load();
@@ -171,11 +174,12 @@ $(function() {
 	connect($(this).val());
     });
     $(document).on('click', '.show', function() {
+        update();
 	display($(this).val());
     });
     $(document).on('click', '#add', function() {
 	d.contacts << ($("#id").val());
-	update();
+	$("#show-feed").click();
     });
 });
 </script>
