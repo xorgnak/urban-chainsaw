@@ -1,0 +1,12 @@
+<div id="nav" style="border: thin solid black; border-radius: 10px; margin: 5% 0 0 0;">
+    <h1>login</h1>
+        <h2 style='margin: 0;'><input type='text' id='U' placeholder='username'></h2>
+	    <h2 style='margin: 0;'><input type='password' id='Z' placeholder='password'></h2>
+	        <h2><button type='button' id='signin'>SIGN IN</button></h2>
+		  </div>
+		  <script>
+$(function() {
+
+
+});
+</script>

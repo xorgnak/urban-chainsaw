@@ -19,6 +19,7 @@
     end
     
     configure do
+      set :server, 'thin'
       set :port, 8081
       set :bind, '0.0.0.0'
       set :views, 'views/'
@@ -32,48 +33,53 @@
       Redis.new.publish "App.#{request.request_method}", "#{request.fullpath} #{params}"
     end
     get '/' do
-      erb :index
+        erb :index
     end
     get '/home' do
-      erb :home
+      if params[:token]
+        if Nomadic.whois(params[:token])
+          erb :home
+        else
+          redirect '/home'
+        end
+      else
+        erb :auth
+      end
+    end
+    post '/auth' do
+      if params[:user] && params[:pass]
+        # new user
+        if !Redis::HashKey.new("AUTH").has_key? params[:user]
+          Redis::HashKey.new("AUTH")[params[:user]] = params[:pass]
+        end
+
+        if Redis::HashKey.new("AUTH")[params[:user]] == params[:pass]
+          t = []; 16.times { t << rand(16).to_s(16) }
+          @token = t.join("")
+          r = Redis.new
+          r.setex("token:#{t.join('')}", ((60 * 60) * 10), params[:user])
+          redirect "/home?token=#{t.join('')}"
+        else
+          redirect '/home'
+        end
+      end
     end
     post '/'do
       content_type 'application/json'
       p = {}
-      # auth
-      if params[:user] && params[:pass]
-        # new user
-        if !Redis::HashKey.new("AUTH").has_key? params[:user]
-          Redis::HashKey.new("AUTH")[params[:user]] = params[:pass]  
-        end
-        # test user
-        if !Redis::HashKey.new("AUTH")[params[:user]] == params[:pass]
-          p[:auth] = false
-        else
-          t = []; 16.times { t << rand(16).to_s(16) }
-          r = Redis.new
-          r.setex("token:#{t.join('')}", ((60 * 60) * 10), params[:id])
-          p[:id] = params[:id]
-          p[:token] = t.join("")
-          # return basic id/token pair.  (means everything is "working.")
-        end
       # valid token
-      elsif params[:token] && Redis.new.get("token:#{params[:token]}") == params[:id]
-        r = Redis.new
-        r.setex("token:#{params[:token]}", ((60 * 60) * 10), params[:id])
-        p[:id] = params[:id]
+      if params[:token]
         p[:token] = params[:token]
-      else
-        p[:auth] = false
+        p[:contacts] = params[:contacts]
+        @u = Nomadic::User.new(p[:token], params)
+        p[:friends] = @u.friends
+        p[:messages] = @u.messages
+        p[:name] = @u.attr['name']
+        p[:pitch] = @u.attr['pitch']
+        p[:image] = @u.attr['image']
+        p[:desc] = @u.attr['desc']
+        p.each {|k,v| session[k] = v }
       end
-
-      p[:contacts] = params[:contacts]
-      @u = User.new(p[:id])
-      p[:friends] = @u.friends
-      p[:messages] = @u.messages
-      p[:name] = @u.attr['name']
-      p[:pitch] = @u.attr['pitch']
-      p[:desc] = @u.attr['desc']
       return JSON.generate(p)
     end
     not_found do
