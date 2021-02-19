@@ -1,4 +1,5 @@
 <form  style="border: thin solid black; border-radius: 10px; margin: 5% 0 0 0;" method='post' action='/auth'>
+  <input type='hidden' name='project' value='<%= params[:project] || 'main' %>'>
   <h1>login</h1>
   <h2 style='margin: 0;'><input type='text' name='user' placeholder='username'></h2>
   <h2 style='margin: 0;'><input type='password' name='pass' placeholder='password'></h2>

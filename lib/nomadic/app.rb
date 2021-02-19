@@ -36,56 +36,49 @@
         erb :index
     end
     get '/home' do
-      if params[:token]
-        if Nomadic.whois(params[:token])
-          @here = Nomadic.user(params[:token])
-          erb :home
+        if params[:token]
+          if Nomadic.whois(params[:token])
+            @here = Nomadic.user(params[:token], params)
+            erb :home
+          else
+            redirect '/home'
+          end
         else
-          redirect '/home'
+          erb :auth
         end
-      else
-        erb :auth
-      end
     end
+    
     post '/auth' do
       if params[:user] && params[:pass]
         t = []; 16.times { t << rand(16).to_s(16) }
         i = []; 16.times { i << rand(16).to_s(16) }
+        @prm = {}
+        
         # new user
         if !Redis::HashKey.new("AUTH").has_key? params[:user]
           Redis::HashKey.new("AUTH")[params[:user]] = params[:pass]
         end
 
+        # existing user, valid pass?
         if Redis::HashKey.new("AUTH")[params[:user]] == params[:pass]
           r = Redis.new
           r.setex("token:#{t.join('')}", ((60 * 60) * 10), params[:user])
           @u = Nomadic.user(t.join(''), params)
-          if !@u.attr.has_key? 'id'
-            @u.attr['id'] = i.join('')
+          # existing user, valid pass, first boot?
+          if !@u.attr.has_key? 'token'
+            @prm[:token] = t.join('')
+          else
+            @prm[:token] = @u.attr['token']
           end
-          redirect "/home?token=#{t.join('')}"
-        else
-          redirect '/home'
+          @prm[:project] = @u.attr['project']
         end
+        prm = @prm.map { |k,v| %[#{k}=#{v}&]  }.join('')
+        redirect "/home?#{prm}"
       end
     end
     post '/'do
       content_type 'application/json'
-      p = {}
-      # valid token
-      if params[:token]
-        p[:token] = params[:token]
-        p[:contacts] = params[:contacts]
-        @u = Nomadic.user(p[:token], params)
-        p[:contacts] = JSON.generate(@u.group.members.to_a)
-        p[:friends] = @u.friends
-        p[:messages] = @u.messages
-        p[:name] = @u.attr['name']
-        p[:pitch] = @u.attr['pitch']
-        p[:image] = @u.attr['image']
-        p[:desc] = @u.attr['desc']
-      end
-      return JSON.generate(p)
+      JSON.generate(Nomadic.user(params[:token], params).to_json)
     end
     not_found do
       h = {
