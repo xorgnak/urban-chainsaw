@@ -4,4 +4,5 @@ module Nomadic
   #  autoload :APP, "nomadic/app"
   require 'nomadic/user'
   require 'nomadic/app'
+  require 'nomadic/repo'
 end

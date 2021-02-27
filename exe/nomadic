@@ -5,6 +5,7 @@ require 'redis-objects'
 require 'paho-mqtt'
 require 'json'
 require 'pry'
+require 'octokit'
 
 require "nomadic"
 def app

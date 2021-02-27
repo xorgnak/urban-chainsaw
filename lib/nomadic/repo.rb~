@@ -1,0 +1,15 @@
+module Repo
+  Repository = Octokit::Client
+  class Repo
+    def initialize r
+      @r = Repository.new(access_token: ENV['OCTOKIT'])
+      if !@r.repository? r
+        hi = OctoKit.say("Hello, world!")
+        @r.create_repository r, {issues: true}
+        @r.create_contents r, "README.md", "00", "# #{r}\nHello, world!\n#{hi}\n# more coming soon...\n## keep up to [date here](/FAQ.md)"
+        @r.create_contents r, "FAQ.md", "# F.A.Q.\n## Basic\n- group name\n- group contact\n- group description"
+      end
+      @r.repository r
+    end
+  end
+end
